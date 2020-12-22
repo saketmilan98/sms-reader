@@ -1,5 +1,9 @@
 package com.tcp.smsreader.tools
+
+import android.content.ContentResolver
 import android.content.Context
+import android.net.Uri
+import android.provider.ContactsContract
 import android.provider.Telephony
 import com.tcp.smsreader.dataclass.ConversationDC
 import com.tcp.smsreader.dataclass.MessageDC
@@ -30,7 +34,7 @@ class Tools{
                     val body = cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Sms.BODY))
 
                     diffHourList.add(getHourByCategory(diffHours).toString())
-                    messages.add(MessageDC(smsId,smsType, number, body, Date(smsDate.toLong()), getHourByCategory(diffHours).toString()))
+                    messages.add(MessageDC(smsId,smsType, number, body, Date(smsDate.toLong()), getHourByCategory(diffHours).toString(), smsDate, number))
                 }
             }
             else{
@@ -64,6 +68,36 @@ class Tools{
         else if( hour1 in 12..24)
             24
         else
-            hour1.toInt()
+            99
+    }
+
+    fun getContactName2(phoneNumber: String?, context : Context) : String {
+        val cr: ContentResolver = context.contentResolver
+        val uri: Uri = Uri.withAppendedPath(
+            ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
+            Uri.encode(phoneNumber)
+        )
+        val cursor = cr.query(
+            uri,
+            arrayOf(ContactsContract.PhoneLookup.DISPLAY_NAME),
+            null,
+            null,
+            null
+        )
+            ?: return phoneNumber!!
+        var contactName: String? = null
+        if (cursor.moveToFirst()) {
+            contactName =
+                cursor.getString(cursor.getColumnIndex(ContactsContract.PhoneLookup.DISPLAY_NAME))
+        }
+        if (!cursor.isClosed) {
+            cursor.close()
+        }
+        if(contactName == null){
+            return phoneNumber!!
+        }
+        else{
+            return contactName
+        }
     }
 }
